@@ -2,11 +2,17 @@ receivers:
   otlp:
     protocols:
       http:
+        endpoint: 0.0.0.0:4318
 
 processors:
   batch:
 
+connectors:
+  spanmetrics:
+
 exporters:
+  debug:
+    verbosity: detailed
   otlp:
     endpoint: "${JAEGER_ENDPOINT}"
     tls:
@@ -19,12 +25,21 @@ extensions:
   zpages:
 
 service:
+  telemetry:
+    metrics:
+      readers:
+        - periodic:
+            interval: 15000 # 15s
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: http://localhost:4318
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp]
+      exporters: [otlp, spanmetrics]
     metrics:
-      receivers: [otlp]
+      receivers: [otlp, spanmetrics]
       processors: [batch]
-      exporters: [prometheus]
+      exporters: [prometheus, debug]

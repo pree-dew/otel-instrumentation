@@ -41,6 +41,9 @@ func Run(ctx context.Context, serviceName string) (ShutdownFunc, error) {
 	if err != nil {
 		return shutdownFunc, err
 	}
+
+	// we can also have stdout exporter
+	// metricExp, err := stdoutmetric.New()
 	metricExp, err := otlpmetrichttp.New(ctx, otlpmetrichttp.WithInsecure())
 	if err != nil {
 		return shutdownFunc, err
