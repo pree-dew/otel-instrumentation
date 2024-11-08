@@ -1,7 +1,5 @@
 # OpenTelemetry for Go Developers: A Gentle Introduction
 
-[Presentation](https://docs.google.com/presentation/d/1ufmrOUlN1Sbbj9ukxY2IdPL-2IDZTypAkSEeQ7eltJo/edit?usp=sharing)
-
 Requirements:
 
 - Go 1.20
