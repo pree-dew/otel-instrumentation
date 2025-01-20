@@ -1,17 +1,14 @@
-package otel
+package telemetry
 
 import (
 	"context"
 
-	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 // ShutdownFunc is a delegate that shuts down the OpenTelemetry components.
@@ -42,14 +39,9 @@ func Run(ctx context.Context, serviceName string) (ShutdownFunc, error) {
 		return shutdownFunc, err
 	}
 
-	// we can also have stdout exporter
-	// metricExp, err := stdoutmetric.New()
-	metricExp, err := otlpmetrichttp.New(ctx, otlpmetrichttp.WithInsecure())
-	if err != nil {
-		return shutdownFunc, err
-	}
-
 	// Create the TracerProvider.
+	// A provider is an implementation of the OpenTelemetry instrumentation API. These providers handle all of the API calls
+	// TraceProvider creates tracers and spans
 	tp := trace.NewTracerProvider(
 		// Record information about this application in an Resource.
 		trace.WithResource(res),
@@ -63,15 +55,10 @@ func Run(ctx context.Context, serviceName string) (ShutdownFunc, error) {
 
 	// Register W3C Trace Context propagator as the global so any imported
 	// instrumentation in the future will default to using it.
-	otel.SetTextMapPropagator(propagation.TraceContext{})
-
-	// Create the MeterProvider.
-	mp := metric.NewMeterProvider(
-		// Record information about this application in an Resource.
-		metric.WithResource(res),
-		// Set metrics exporter.
-		metric.WithReader(metric.NewPeriodicReader(metricExp)),
-	)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	// Update the returned shutdownFunc that calls both providers'
 	// shutdown methods and make sure that a non-nil error is returned
@@ -81,19 +68,7 @@ func Run(ctx context.Context, serviceName string) (ShutdownFunc, error) {
 		if err := tp.Shutdown(ctx); err != nil {
 			retErr = err
 		}
-		if err := mp.Shutdown(ctx); err != nil {
-			retErr = err
-		}
 		return retErr
-	}
-
-	// Register our TracerProvider as the global so any imported
-	// instrumentation in the future will default to using it.
-	otel.SetMeterProvider(mp)
-
-	// Add runtime metrics instrumentation.
-	if err := runtime.Start(); err != nil {
-		return nil, err
 	}
 
 	// Return the Shutdown function so that it can be used by the caller to
