@@ -25,6 +25,12 @@ cd order-service
 go run main.go
 ```
 
+Run curl to see traces in action
+
+```sh
+curl http://localhost:8080/user
+```
+
 Browse exported telemetry:
 
 - [Traces](http://localhost:16686)
