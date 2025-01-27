@@ -1,0 +1,15 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+metrics:
+  otlp:
+    endpoint: "http://localhost:4318"  # Default OTLP/HTTP endpoint
+    path: "/v1/metrics"               # Metrics endpoint path
+    push_interval: 10                 # seconds
+    headers:                          # Optional headers
+      Authorization: ""               # For authentication if needed
+  service:
+    name: "user-service"
+    version: "1.0.0"
+    environment: "development"
